@@ -1,53 +1,72 @@
-#include <pthread.h>
 #include <string.h>
+#include <vector>
+
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/hci_lib.h>
+
+#include <blepp/logging.h>
+#include <blepp/pretty_printers.h>
+#include <blepp/blestatemachine.h>
+#include <blepp/lescan.h>
+#include <blepp/uuid.h>
+
+using namespace BLEPP;
 
 //UUIDs of BLE beacons
-const char UUID1[36] = "";
-const char UUID2[36] = "";
-const char UUID3[36] = "";
+const BLEPP::bt_uuid_t UUID1;
+const BLEPP::bt_uuid_t UUID2;
+const BLEPP::bt_uuid_t UUID3;
 
-struct scanArg //Holds information to pass to threads
+struct btevent //Stores information when a given UUID is detected
 {
-    int thread_id;
-    //Bluetooth info
-    char UUID[36];
-    float* s;
-    unsigned int* t;
+    bt_uuid_t UUID;
+    unsigned int* t; //Time of event
+    int8_t rssi; //RSSI of signal
+};
+
+HCIScanner* scanSetup() 
+{
+    //Scan setup
+    HCIScanner::ScanType type = HCIScanner::ScanType::Active;
+    HCIScanner::FilterDuplicates filter = HCIScanner::FilterDuplicates::Off; //Needs testing
+    HCIScanner scanner(true, filter, type);
+    //Probably this should send errors and results somewhere (this will be part of ROS wrapper)
+    return &scanner;
 }
 
-double scanSignal(void *threadarg) //Scans for an individual signal strength
+std::vector<btevent> getResults(HCIScanner scanner, btevent b1, btevent b2, btevent b3) //Run this when you want to get scan results
 {
-    //Get struct with information about needed scan
-    struct scanArg *args;
-    args = (struct scanArg *) threadarg;
-    //Scan for it
-}
-
-pthread_t* scanSetup(float *s1, float *s2, float *s3, unsigned int* t1, unsigned int* t2, unsigned int* t3) 
-{
-    //Setup
-    pthread_t threads[3];
-    scanArg threadData[3];
-    //TODO: Add actual scan
-
-    //Create threads for each BLE scanner
-    //1
-    threadData[0].thread_id = 1;
-    std::strcpy(threadData[0].UUID, UUID1);
-    threadData[0].s = s1;
-    threadData[0].t = t1;
-    //2
-    threadData[1].thread_id = 2;
-    std::strcpy(threadData[1].UUID, UUID2);
-    threadData[1].s = s2;
-    threadData[1].t = t2;
-    //3
-    threadData[2].thread_id = 3;
-    std::strcpy(threadData[2].UUID, UUID3);
-    threadData[2].s = s3;
-    threadData[2].t = t3;
-    //Start threads
-    for (int i = 0; i < 3; i++) {
-        pthread_create(&threads[i], NULL, scanSignal, (void *) &threadData);
+    std::vector<AdvertisingResponse> responses = scanner.get_advertisements();
+    std::vector<btevent> events = std::vector<btevent>();
+    for (const auto& ad: responses) 
+    {
+        //Test to see if any of the bluetooth addresses match
+        if (ad.uuid_128_bit_complete) //Make sure UUID is correct type- update to whatever our UUID type is
+        {
+            if (ad.UUIDs.at(2) == UUID::from(UUID1)) 
+            {
+                //TODO: Get current time t
+                btevent event;
+                event.UUID = UUID1;
+                event.rssi = ad.rssi;
+                events.push_back(event);
+            }
+            else if (ad.UUIDs.at(2) == UUID::from(UUID2))
+            {
+                btevent event;
+                event.UUID = UUID2;
+                event.rssi = ad.rssi;
+                events.push_back(event);
+            }
+            else if (ad.UUIDs.at(2) == UUID::from(UUID3))
+            {
+                btevent event;
+                event.UUID = UUID3;
+                event.rssi = ad.rssi;
+                events.push_back(event);
+            }
+        }
     }
+    return events;
 }

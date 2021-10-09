@@ -25,7 +25,9 @@ float calcRadius(float s, float k)
 
 void getRadii(float *s1, float *s2, float *s3, float *r1, float *r2, float *r3, float k1, float k2, float k3) 
 {
-    r1* = calcRadius(s1*, k1);
-    r2* = calcRadius(s2*, k2);
-    r3* = calcRadius(s3*, k3);
+    *r1 = calcRadius(*s1, k1);
+    *r2 = calcRadius(*s2, k2);
+    *r3 = calcRadius(*s3, k3);
 }
+
+//This is where ROS wrappers should attach!
