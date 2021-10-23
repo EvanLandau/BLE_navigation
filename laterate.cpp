@@ -7,16 +7,9 @@
 #define VZ 0.0
 #define WY 0.0
 #define WZ 0.0
-//Error threshold
-#define ETHRESH 0.00001
+//Error threshold - not currently working
+//#define ETHRESH 0.00001
 
-/*Error Code Table
-#0 - No error
-#1 - Junk r1,r2,r3,or z passed
-#2 - Bad bilateration command
-#3 - In range
-#4 - Out of range
-*/
 
 unsigned char bilaterate_r3(float *_x, float *_y, float *_z, float r1, float r2, float z) 
 {
@@ -175,6 +168,7 @@ unsigned char multilaterate(float *_x, float *_y, float *_z, float r1, float r2,
         double e13 = (y - UY) * (y - UY) - (y - WY) * (y - WY) + (z - UZ) * (z - UZ) + (z - WZ) * (z - WZ) - d13;
         double e23 = (y - VY) * (y - VY) - (y - WY) * (y - WY) + (z - VZ) * (z - VZ) + (z - WZ) * (z - WZ) - d23;
         //Test if threshold crossed
+        /*
         bool fail12 = e12 > ETHRESH || e12 < -ETHRESH;
         bool fail13 = e13 > ETHRESH || e13 < -ETHRESH;
         bool fail23 = e23 > ETHRESH || e23 < -ETHRESH;
@@ -189,6 +183,8 @@ unsigned char multilaterate(float *_x, float *_y, float *_z, float r1, float r2,
                 mode = 4;
             }
         }
+        */
+       mode = 4; //until error checking works we will say mode is 4
     }
     unsigned char rn = 1;
     switch(mode) 

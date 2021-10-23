@@ -1,9 +1,13 @@
-#include "laterate.cpp"
-//#include "bluetooth_manage.cpp"
+#include "manager.h"
 
 #include <iostream>
 
-float fastInvSqrt(float x) 
+Manager::Manager() 
+{
+    this->scanner = scanSetup();
+}
+
+float Manager::fastInvSqrt(float x) 
 {
     //Fast inverse square root (see https://en.wikipedia.org/wiki/Fast_inverse_square_root#Aliasing_to_an_integer_as_an_approximate_logarithm)
     unsigned long i;
@@ -18,16 +22,43 @@ float fastInvSqrt(float x)
     return y;
 }
 
-float calcRadius(float s, float k) 
+float Manager::calcRadius(float s, float k) 
 {
     return k * fastInvSqrt(s);
 }
 
-void getRadii(float *s1, float *s2, float *s3, float *r1, float *r2, float *r3, float k1, float k2, float k3) 
+void Manager::getRadii(float s1, float s2, float s3) 
 {
-    *r1 = calcRadius(*s1, k1);
-    *r2 = calcRadius(*s2, k2);
-    *r3 = calcRadius(*s3, k3);
+    this->r1 = calcRadius(s1, this->k1);
+    this->r2 = calcRadius(s2, this->k2);
+    this->r3 = calcRadius(s3, this->k3);
+}
+
+
+void Manager::getPos() 
+{
+    std::vector<btevent> events = getResults(this->scanner);
+    float s1, s2, s3; //I am assuming that RSSI scales linearly- needs testing
+    for (btevent event : events) 
+    {
+        switch(event.r_id) 
+        {
+        case 1:
+            s1 = event.rssi;
+            break;
+        case 2:
+            s2 = event.rssi;
+            break;
+        case 3:
+            s3 = event.rssi;
+            break;
+        }
+    }
+    getRadii(s1, s2, s3);
+    float x,  y, z;
+    multilaterate(&this->x, &this->y, &this->z, this->r1, this->r2, this->r3, this->x, this->y, this->z, 0);
+    //REturn by address
+    *_x = x; *_y = y; *_z = z;
 }
 
 //This is where ROS wrappers should attach!
